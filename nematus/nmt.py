@@ -880,7 +880,7 @@ def train(dim_word=100,  # word vector dimensionality
             uidx = rmodel['uidx']
 
     #save model options
-    json.dump(model_options, open('%s.json' % saveto, 'wb'), indent=2)
+    json.dump(model_options, open('%s.json' % saveto, 'w', encoding='utf-8'), indent=2)
 
     if validFreq == -1:
         validFreq = len(train[0])/batch_size
