@@ -43,12 +43,12 @@ class TextIterator:
 
         if self.n_words_source > 0:
             for d in self.source_dicts:
-                for key, idx in d.items():
+                for key, idx in list(d.items()):
                     if idx >= self.n_words_source:
                         del d[key]
 
         if self.n_words_target > 0:
-                for key, idx in self.target_dict.items():
+                for key, idx in list(self.target_dict.items()):
                     if idx >= self.n_words_target:
                         del self.target_dict[key]
 
