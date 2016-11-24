@@ -75,6 +75,9 @@ class TextIterator:
             self.target.seek(0)
 
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         if self.end_of_data:
             self.end_of_data = False
             self.reset()

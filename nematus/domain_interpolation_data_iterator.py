@@ -104,8 +104,11 @@ class DomainInterpolatorTextIterator:
         self.interpolation_rate = interpolation_rate
         self.indomain_k = int(math.ceil(self.interpolation_rate * self.k))
         self.outdomain_k = self.k - self.indomain_k
-        
+
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         if self.end_of_data:
             self.end_of_data = False
             self.reset()
