@@ -1,11 +1,13 @@
+from __future__ import absolute_import
 import numpy
 
 import gzip
 
-import shuffle
-from util import load_dict
+from . import shuffle
+from .util import load_dict
 
 import math
+from six.moves import range
 
 def fopen(filename, mode='r'):
     if filename.endswith('.gz'):
@@ -116,7 +118,7 @@ class DomainInterpolatorTextIterator:
         assert len(self.source_buffer) == len(self.target_buffer), 'Buffer size mismatch!'
 
         if len(self.source_buffer) == 0:
-            for k_ in xrange(self.outdomain_k):
+            for k_ in range(self.outdomain_k):
                 ss = self.source.readline()
                 if ss == "":
                     break
@@ -125,7 +127,7 @@ class DomainInterpolatorTextIterator:
                     break
                 self.source_buffer.append(ss.strip().split())
                 self.target_buffer.append(tt.strip().split())
-            for k_ in xrange(self.indomain_k):
+            for k_ in range(self.indomain_k):
                 indomain_error = False
                 try:
                     ss = self.indomain_source.readline()

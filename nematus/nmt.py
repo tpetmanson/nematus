@@ -3,11 +3,13 @@
 '''
 Build a neural machine translation model with soft attention
 '''
+from __future__ import absolute_import
+from __future__ import print_function
 import theano
 import theano.tensor as tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-import cPickle as pkl
+import six.moves.cPickle as pkl
 import json
 import ipdb
 import numpy
@@ -22,19 +24,22 @@ import time
 from subprocess import Popen
 
 from collections import OrderedDict
+import six
+from six.moves import range
+from six.moves import zip
 
 profile = False
 
-from data_iterator import TextIterator
-from util import *
-from theano_util import *
-from alignment_util import *
+from .data_iterator import TextIterator
+from .util import *
+from .theano_util import *
+from .alignment_util import *
 
-from layers import *
-from initializers import *
-from optimizers import *
+from .layers import *
+from .initializers import *
+from .optimizers import *
 
-from domain_interpolation_data_iterator import DomainInterpolatorTextIterator
+from .domain_interpolation_data_iterator import DomainInterpolatorTextIterator
 
 # batch preparation
 def prepare_data(seqs_x, seqs_y, maxlen=None, n_words_src=30000,
@@ -72,7 +77,7 @@ def prepare_data(seqs_x, seqs_y, maxlen=None, n_words_src=30000,
     x_mask = numpy.zeros((maxlen_x, n_samples)).astype('float32')
     y_mask = numpy.zeros((maxlen_y, n_samples)).astype('float32')
     for idx, [s_x, s_y] in enumerate(zip(seqs_x, seqs_y)):
-        x[:, :lengths_x[idx], idx] = zip(*s_x)
+        x[:, :lengths_x[idx], idx] = list(zip(*s_x))
         x_mask[:lengths_x[idx]+1, idx] = 1.
         y[:lengths_y[idx], idx] = s_y
         y_mask[:lengths_y[idx]+1, idx] = 1.
@@ -368,10 +373,10 @@ def build_sampler(tparams, options, use_noise, trng, return_alignment=False):
     init_state = get_layer_constr('ff')(tparams, ctx_mean, options,
                                     prefix='ff_state', activ='tanh')
 
-    print >>sys.stderr, 'Building f_init...',
+    print('Building f_init...', end=' ', file=sys.stderr)
     outs = [init_state, ctx]
     f_init = theano.function([x], outs, name='f_init', profile=profile)
-    print >>sys.stderr, 'Done'
+    print('Done', file=sys.stderr)
 
     # x: 1 x 1
     y = tensor.vector('y_sampler', dtype='int64')
@@ -433,7 +438,7 @@ def build_sampler(tparams, options, use_noise, trng, return_alignment=False):
 
     # compile a function to do the whole thing above, next word probability,
     # sampled word for the next target, next hidden state to be used
-    print >>sys.stderr, 'Building f_next..',
+    print('Building f_next..', end=' ', file=sys.stderr)
     inps = [y, ctx, init_state]
     outs = [next_probs, next_sample, next_state]
 
@@ -441,7 +446,7 @@ def build_sampler(tparams, options, use_noise, trng, return_alignment=False):
         outs.append(dec_alphas)
 
     f_next = theano.function(inps, outs, name='f_next', profile=profile)
-    print >>sys.stderr, 'Done'
+    print('Done', file=sys.stderr)
 
     return f_init, f_next
 
@@ -470,7 +475,7 @@ def gen_sample(f_init, f_next, x, trng=None, k=1, maxlen=30,
     hyp_scores = numpy.zeros(live_k).astype('float32')
     hyp_states = []
     if return_alignment:
-        hyp_alignment = [[] for _ in xrange(live_k)]
+        hyp_alignment = [[] for _ in range(live_k)]
 
     # for ensemble decoding, we keep track of states and probability distribution
     # for each model in the ensemble
@@ -480,15 +485,15 @@ def gen_sample(f_init, f_next, x, trng=None, k=1, maxlen=30,
     next_p = [None]*num_models
     dec_alphas = [None]*num_models
     # get initial state of decoder rnn and encoder context
-    for i in xrange(num_models):
+    for i in range(num_models):
         ret = f_init[i](x)
         next_state[i] = ret[0]
         ctx0[i] = ret[1]
     next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
 
     # x is a sequence of word ids followed by 0, eos id
-    for ii in xrange(maxlen):
-        for i in xrange(num_models):
+    for ii in range(maxlen):
+        for i in range(num_models):
             ctx = numpy.tile(ctx0[i], [live_k, 1])
             inps = [next_w, ctx, next_state[i]]
             ret = f_next[i](*inps)
@@ -533,14 +538,14 @@ def gen_sample(f_init, f_next, x, trng=None, k=1, maxlen=30,
                 # holds the history of attention weights for each time step for each of the surviving hypothesis
                 # dimensions (live_k * target_words * source_hidden_units]
                 # at each time step we append the attention weights corresponding to the current target word
-                new_hyp_alignment = [[] for _ in xrange(k-dead_k)]
+                new_hyp_alignment = [[] for _ in range(k-dead_k)]
 
             # ti -> index of k-best hypothesis
             for idx, [ti, wi] in enumerate(zip(trans_indices, word_indices)):
                 new_hyp_samples.append(hyp_samples[ti]+[wi])
                 new_word_probs.append(word_probs[ti] + [probs_flat[ranks_flat[idx]].tolist()])
                 new_hyp_scores[idx] = copy.copy(costs[idx])
-                new_hyp_states.append([copy.copy(next_state[i][ti]) for i in xrange(num_models)])
+                new_hyp_states.append([copy.copy(next_state[i][ti]) for i in range(num_models)])
                 if return_alignment:
                     # get history of attention weights for the current hypothesis
                     new_hyp_alignment[idx] = copy.copy(hyp_alignment[ti])
@@ -558,7 +563,7 @@ def gen_sample(f_init, f_next, x, trng=None, k=1, maxlen=30,
                 hyp_alignment = []
 
             # sample and sample_score hold the k-best translations and their scores
-            for idx in xrange(len(new_hyp_samples)):
+            for idx in range(len(new_hyp_samples)):
                 if new_hyp_samples[idx][-1] == 0:
                     sample.append(new_hyp_samples[idx])
                     sample_score.append(new_hyp_scores[idx])
@@ -589,7 +594,7 @@ def gen_sample(f_init, f_next, x, trng=None, k=1, maxlen=30,
     if not stochastic:
         # dump every remaining one
         if live_k > 0:
-            for idx in xrange(live_k):
+            for idx in range(live_k):
                 sample.append(hyp_samples[idx])
                 sample_score.append(hyp_scores[idx])
                 sample_word_probs.append(word_probs[idx])
@@ -641,7 +646,7 @@ def pred_probs(f_log_probs, prepare_data, options, iterator, verbose=True, norma
             ipdb.set_trace()
 
         if verbose:
-            print >>sys.stderr, '%d samples computed' % (n_done)
+            print('%d samples computed' % (n_done), file=sys.stderr)
 
     return numpy.array(probs), alignments_json
 
@@ -720,7 +725,7 @@ def train(dim_word=100,  # word vector dimensionality
     for ii, dd in enumerate(dictionaries):
         worddicts[ii] = load_dict(dd)
         worddicts_r[ii] = dict()
-        for kk, vv in worddicts[ii].iteritems():
+        for kk, vv in six.iteritems(worddicts[ii]):
             worddicts_r[ii][vv] = kk
 
     if n_words_src is None:
@@ -731,10 +736,10 @@ def train(dim_word=100,  # word vector dimensionality
         model_options['n_words'] = n_words
 
 
-    print 'Loading data'
+    print('Loading data')
     domain_interpolation_cur = None
     if use_domain_interpolation:
-        print 'Using domain interpolation with initial ratio %s, increase rate %s' % (domain_interpolation_min, domain_interpolation_inc)
+        print('Using domain interpolation with initial ratio %s, increase rate %s' % (domain_interpolation_min, domain_interpolation_inc))
         domain_interpolation_cur = domain_interpolation_min
         train = DomainInterpolatorTextIterator(datasets[0], datasets[1],
                          dictionaries[:-1], dictionaries[1],
@@ -768,11 +773,11 @@ def train(dim_word=100,  # word vector dimensionality
 
     comp_start = time.time()
 
-    print 'Building model'
+    print('Building model')
     params = init_params(model_options)
     # reload parameters
     if reload_ and os.path.exists(saveto):
-        print 'Reloading model parameters'
+        print('Reloading model parameters')
         params = load_params(saveto, params)
 
     tparams = init_theano_params(params)
@@ -786,13 +791,13 @@ def train(dim_word=100,  # word vector dimensionality
     inps = [x, x_mask, y, y_mask]
 
     if validFreq or sampleFreq:
-        print 'Building sampler'
+        print('Building sampler')
         f_init, f_next = build_sampler(tparams, model_options, use_noise, trng)
 
     # before any regularizer
-    print 'Building f_log_probs...',
+    print('Building f_log_probs...', end=' ')
     f_log_probs = theano.function(inps, cost, profile=profile)
-    print 'Done'
+    print('Done')
 
     cost = cost.mean()
 
@@ -800,7 +805,7 @@ def train(dim_word=100,  # word vector dimensionality
     if decay_c > 0.:
         decay_c = theano.shared(numpy.float32(decay_c), name='decay_c')
         weight_decay = 0.
-        for kk, vv in tparams.iteritems():
+        for kk, vv in six.iteritems(tparams):
             weight_decay += (vv ** 2).sum()
         weight_decay *= decay_c
         cost += weight_decay
@@ -817,7 +822,7 @@ def train(dim_word=100,  # word vector dimensionality
     if map_decay_c > 0:
         map_decay_c = theano.shared(numpy.float32(map_decay_c), name="map_decay_c")
         weight_map_decay = 0.
-        for kk, vv in tparams.iteritems():
+        for kk, vv in six.iteritems(tparams):
             init_value = theano.shared(vv.get_value(), name= kk + "_init")
             weight_map_decay += ((vv -init_value) ** 2).sum()
         weight_map_decay *= map_decay_c
@@ -825,19 +830,19 @@ def train(dim_word=100,  # word vector dimensionality
 
     # allow finetuning with fixed embeddings
     if finetune:
-        updated_params = OrderedDict([(key,value) for (key,value) in tparams.iteritems() if not key.startswith('Wemb')])
+        updated_params = OrderedDict([(key,value) for (key,value) in six.iteritems(tparams) if not key.startswith('Wemb')])
     else:
         updated_params = tparams
 
     # allow finetuning of only last layer (becomes a linear model training problem)
     if finetune_only_last:
-        updated_params = OrderedDict([(key,value) for (key,value) in tparams.iteritems() if key in ['ff_logit_W', 'ff_logit_b']])
+        updated_params = OrderedDict([(key,value) for (key,value) in six.iteritems(tparams) if key in ['ff_logit_W', 'ff_logit_b']])
     else:
         updated_params = tparams
 
-    print 'Computing gradient...',
+    print('Computing gradient...', end=' ')
     grads = tensor.grad(cost, wrt=itemlist(updated_params))
-    print 'Done'
+    print('Done')
 
     # apply gradient clipping here
     if clip_c > 0.:
@@ -854,13 +859,13 @@ def train(dim_word=100,  # word vector dimensionality
     # compile the optimizer, the actual computational graph is compiled here
     lr = tensor.scalar(name='lr')
 
-    print 'Building optimizers...',
+    print('Building optimizers...', end=' ')
     f_grad_shared, f_update = eval(optimizer)(lr, updated_params, grads, inps, cost, profile=profile)
-    print 'Done'
+    print('Done')
 
-    print 'Total compilation time: {0:.1f}s'.format(time.time() - comp_start)
+    print('Total compilation time: {0:.1f}s'.format(time.time() - comp_start))
 
-    print 'Optimization'
+    print('Optimization')
 
     best_p = None
     bad_counter = 0
@@ -889,7 +894,7 @@ def train(dim_word=100,  # word vector dimensionality
     last_disp_samples = 0
     ud_start = time.time()
     p_validation = None
-    for eidx in xrange(max_epochs):
+    for eidx in range(max_epochs):
         n_samples = 0
 
         for x, y in train:
@@ -908,7 +913,7 @@ def train(dim_word=100,  # word vector dimensionality
                                                 n_words=n_words)
 
             if x is None:
-                print 'Minibatch with zero sample under length ', maxlen
+                print('Minibatch with zero sample under length ', maxlen)
                 uidx -= 1
                 continue
 
@@ -921,42 +926,42 @@ def train(dim_word=100,  # word vector dimensionality
             # check for bad numbers, usually we remove non-finite elements
             # and continue training - but not done here
             if numpy.isnan(cost) or numpy.isinf(cost):
-                print 'NaN detected'
+                print('NaN detected')
                 return 1., 1., 1.
 
             # verbose
             if numpy.mod(uidx, dispFreq) == 0:
                 ud = time.time() - ud_start
                 wps = (last_disp_samples) / float(ud)
-                print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'UD ', ud, "{0:.2f} sentences/s".format(wps)
+                print('Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'UD ', ud, "{0:.2f} sentences/s".format(wps))
                 ud_start = time.time()
                 last_disp_samples = 0
 
             # save the best model so far, in addition, save the latest model
             # into a separate file with the iteration number for external eval
             if numpy.mod(uidx, saveFreq) == 0:
-                print 'Saving the best model...',
+                print('Saving the best model...', end=' ')
                 if best_p is not None:
                     params = best_p
                 else:
                     params = unzip_from_theano(tparams)
                 numpy.savez(saveto, history_errs=history_errs, uidx=uidx, **params)
-                print 'Done'
+                print('Done')
 
                 # save with uidx
                 if not overwrite:
-                    print 'Saving the model at iteration {}...'.format(uidx),
+                    print('Saving the model at iteration {}...'.format(uidx), end=' ')
                     saveto_uidx = '{}.iter{}.npz'.format(
                         os.path.splitext(saveto)[0], uidx)
                     numpy.savez(saveto_uidx, history_errs=history_errs,
                                 uidx=uidx, **unzip_from_theano(tparams))
-                    print 'Done'
+                    print('Done')
 
 
             # generate some samples with the model and display them
             if sampleFreq and numpy.mod(uidx, sampleFreq) == 0:
                 # FIXME: random selection?
-                for jj in xrange(numpy.minimum(5, x.shape[2])):
+                for jj in range(numpy.minimum(5, x.shape[2])):
                     stochastic = True
                     sample, score, sample_word_probs, alignment = gen_sample([f_init], [f_next],
                                                x[:, :, jj][:, :, None],
@@ -965,7 +970,7 @@ def train(dim_word=100,  # word vector dimensionality
                                                stochastic=stochastic,
                                                argmax=False,
                                                suppress_unk=False)
-                    print 'Source ', jj, ': ',
+                    print('Source ', jj, ': ', end=' ')
                     for pos in range(x.shape[1]):
                         if x[0, pos, jj] == 0:
                             break
@@ -979,17 +984,17 @@ def train(dim_word=100,  # word vector dimensionality
                                 sys.stdout.write('|')
                             else:
                                 sys.stdout.write(' ')
-                    print
-                    print 'Truth ', jj, ' : ',
+                    print()
+                    print('Truth ', jj, ' : ', end=' ')
                     for vv in y[:, jj]:
                         if vv == 0:
                             break
                         if vv in worddicts_r[-1]:
-                            print worddicts_r[-1][vv],
+                            print(worddicts_r[-1][vv], end=' ')
                         else:
-                            print 'UNK',
-                    print
-                    print 'Sample ', jj, ': ',
+                            print('UNK', end=' ')
+                    print()
+                    print('Sample ', jj, ': ', end=' ')
                     if stochastic:
                         ss = sample
                     else:
@@ -999,10 +1004,10 @@ def train(dim_word=100,  # word vector dimensionality
                         if vv == 0:
                             break
                         if vv in worddicts_r[-1]:
-                            print worddicts_r[-1][vv],
+                            print(worddicts_r[-1][vv], end=' ')
                         else:
-                            print 'UNK',
-                    print
+                            print('UNK', end=' ')
+                    print()
 
             # validate model on validation set and early stop if necessary
             if valid and validFreq and numpy.mod(uidx, validFreq) == 0:
@@ -1021,43 +1026,43 @@ def train(dim_word=100,  # word vector dimensionality
                     if bad_counter > patience:
                         if use_domain_interpolation and (domain_interpolation_cur < 1.0):
                             domain_interpolation_cur = min(domain_interpolation_cur + domain_interpolation_inc, 1.0)
-                            print 'No progress on the validation set, increasing domain interpolation rate to %s and resuming from best params' % domain_interpolation_cur
+                            print('No progress on the validation set, increasing domain interpolation rate to %s and resuming from best params' % domain_interpolation_cur)
                             train.adjust_domain_interpolation_rate(domain_interpolation_cur)
                             if best_p is not None:
                                 zip_to_theano(best_p, tparams)
                             bad_counter = 0
                         else:
-                            print 'Early Stop!'
+                            print('Early Stop!')
                             estop = True
                             break
 
                 if numpy.isnan(valid_err):
                     ipdb.set_trace()
 
-                print 'Valid ', valid_err
+                print('Valid ', valid_err)
 
                 if external_validation_script:
-                    print "Calling external validation script"
+                    print("Calling external validation script")
                     if p_validation is not None and p_validation.poll() is None:
-                        print "Waiting for previous validation run to finish"
-                        print "If this takes too long, consider increasing validation interval, reducing validation set size, or speeding up validation by using multiple processes"
+                        print("Waiting for previous validation run to finish")
+                        print("If this takes too long, consider increasing validation interval, reducing validation set size, or speeding up validation by using multiple processes")
                         valid_wait_start = time.time()
                         p_validation.wait()
-                        print "Waited for {0:.1f} seconds".format(time.time()-valid_wait_start)
-                    print 'Saving  model...',
+                        print("Waited for {0:.1f} seconds".format(time.time()-valid_wait_start))
+                    print('Saving  model...', end=' ')
                     params = unzip_from_theano(tparams)
                     numpy.savez(saveto +'.dev', history_errs=history_errs, uidx=uidx, **params)
                     json.dump(model_options, open('%s.dev.npz.json' % saveto, 'wb'), indent=2)
-                    print 'Done'
+                    print('Done')
                     p_validation = Popen([external_validation_script])
 
             # finish after this many updates
             if uidx >= finish_after:
-                print 'Finishing after %d iterations!' % uidx
+                print('Finishing after %d iterations!' % uidx)
                 estop = True
                 break
 
-        print 'Seen %d samples' % n_samples
+        print('Seen %d samples' % n_samples)
 
         if estop:
             break
@@ -1071,7 +1076,7 @@ def train(dim_word=100,  # word vector dimensionality
                                         model_options, valid)
         valid_err = valid_errs.mean()
 
-        print 'Valid ', valid_err
+        print('Valid ', valid_err)
 
     if best_p is not None:
         params = copy.copy(best_p)

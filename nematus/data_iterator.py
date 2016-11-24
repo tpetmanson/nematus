@@ -1,9 +1,11 @@
+from __future__ import absolute_import
 import numpy
 
 import gzip
 
-import shuffle
-from util import load_dict
+from . import shuffle
+from .util import load_dict
+from six.moves import range
 
 def fopen(filename, mode='r'):
     if filename.endswith('.gz'):
@@ -85,7 +87,7 @@ class TextIterator:
         assert len(self.source_buffer) == len(self.target_buffer), 'Buffer size mismatch!'
 
         if len(self.source_buffer) == 0:
-            for k_ in xrange(self.k):
+            for k_ in range(self.k):
                 ss = self.source.readline()
                 if ss == "":
                     break
@@ -155,6 +157,6 @@ class TextIterator:
 
         # all sentence pairs in maxibatch filtered out because of length
         if len(source) == 0 or len(target) == 0:
-            source, target = self.next()
+            source, target = next(self)
 
         return source, target

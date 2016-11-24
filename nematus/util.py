@@ -2,9 +2,10 @@
 Utility functions
 '''
 
+from __future__ import absolute_import
 import sys
 import json
-import cPickle as pkl
+import six.moves.cPickle as pkl
 
 #json loads strings as unicode; we currently still work with Python 2 strings, and need conversion
 def unicode_to_utf8(d):

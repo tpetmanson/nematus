@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from nematus import *
-import rescore
-import translate
+from . import rescore
+from . import translate

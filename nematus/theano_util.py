@@ -2,32 +2,35 @@
 Theano utility functions
 '''
 
+from __future__ import absolute_import
 import json
-import cPickle as pkl
+import six.moves.cPickle as pkl
 import numpy
 from collections import OrderedDict
 
 import theano
 import theano.tensor as tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+import six
+from six.moves import range
 
 # push parameters to Theano shared variables
 def zip_to_theano(params, tparams):
-    for kk, vv in params.iteritems():
+    for kk, vv in six.iteritems(params):
         tparams[kk].set_value(vv)
 
 
 # pull parameters from Theano shared variables
 def unzip_from_theano(zipped):
     new_params = OrderedDict()
-    for kk, vv in zipped.iteritems():
+    for kk, vv in six.iteritems(zipped):
         new_params[kk] = vv.get_value()
     return new_params
 
 
 # get the list of parameters: Note that tparams must be OrderedDict
 def itemlist(tparams):
-    return [vv for kk, vv in tparams.iteritems()]
+    return [vv for kk, vv in six.iteritems(tparams)]
 
 # make prefix-appended name
 def pp(pp, name):
@@ -36,7 +39,7 @@ def pp(pp, name):
 # initialize Theano shared variables according to the initial parameters
 def init_theano_params(params):
     tparams = OrderedDict()
-    for kk, pp in params.iteritems():
+    for kk, pp in six.iteritems(params):
         tparams[kk] = theano.shared(params[kk], name=kk)
     return tparams
 
@@ -44,7 +47,7 @@ def init_theano_params(params):
 # load parameters
 def load_params(path, params):
     pp = numpy.load(path)
-    for kk, vv in params.iteritems():
+    for kk, vv in six.iteritems(params):
         if kk not in pp:
             warnings.warn('%s is not in the archive' % kk)
             continue

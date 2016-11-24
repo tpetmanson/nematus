@@ -3,6 +3,7 @@ Given a parallel corpus of sentence pairs: with one-to-one of target and source 
 produce the score, and optionally alignment for each pair.
 """
 
+from __future__ import absolute_import
 import sys
 import argparse
 import tempfile
@@ -10,16 +11,18 @@ import tempfile
 import numpy
 import json
 
-from data_iterator import TextIterator
-from util import load_dict, load_config
-from alignment_util import *
-from compat import fill_options
+from .data_iterator import TextIterator
+from .util import load_dict, load_config
+from .alignment_util import *
+from .compat import fill_options
 
-from theano_util import (load_params, init_theano_params)
-from nmt import (pred_probs, build_model, prepare_data, init_params)
+from .theano_util import (load_params, init_theano_params)
+from .nmt import (pred_probs, build_model, prepare_data, init_params)
 
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 import theano
+from six.moves import map
+from six.moves import zip
 
 def rescore_model(source_file, target_file, saveto, models, options, b, normalize, verbose, alignweights):
 

@@ -10,10 +10,13 @@ To use:
 	python copy_unknown_words.py -i translation.txt -o updated_translation.txt -u 'UNK'
 '''
 
+from __future__ import absolute_import
+from __future__ import print_function
 import json
 import numpy
 import argparse
 import sys
+from six.moves import range
 
 ''' 
 Example input file:
@@ -38,7 +41,7 @@ def copy_unknown_words(filename, out_filename, unk_token):
 # 		print hard_alignment
 		
 		updated_target_words = []
-		for j in xrange(len(target_words)):
+		for j in range(len(target_words)):
 			if target_words[j] == unk_token:
 				unk_source = source_words[hard_alignment[j]]
 				updated_target_words.append(unk_source)
@@ -49,7 +52,7 @@ def copy_unknown_words(filename, out_filename, unk_token):
 # 		print "Updated translation:"
 # 		print sent_pair
 		sent_pair = json.dumps(sent_pair).decode('unicode-escape').encode('utf8')
-		print >>out_filename, sent_pair
+		print(sent_pair, file=out_filename)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

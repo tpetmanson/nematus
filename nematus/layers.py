@@ -2,8 +2,9 @@
 Layer definitions
 '''
 
+from __future__ import absolute_import
 import json
-import cPickle as pkl
+import six.moves.cPickle as pkl
 import numpy
 from collections import OrderedDict
 
@@ -11,10 +12,10 @@ import theano
 import theano.tensor as tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-from initializers import *
-from util import *
-from theano_util import *
-from alignment_util import *
+from .initializers import *
+from .util import *
+from .theano_util import *
+from .alignment_util import *
 
 # layers: 'name': ('parameter initializer', 'feedforward')
 layers = {'ff': ('param_init_fflayer', 'fflayer'),

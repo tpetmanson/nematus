@@ -1,22 +1,27 @@
 '''
 Translates a source file using a translation model.
 '''
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import argparse
 
 import numpy
 import json
-import cPickle as pkl
+import six.moves.cPickle as pkl
 
 from multiprocessing import Process, Queue
-from util import load_dict, load_config
-from compat import fill_options
+from .util import load_dict, load_config
+from .compat import fill_options
+import six
+from six.moves import range
+from six.moves import zip
 
 
 def translate_model(queue, rqueue, pid, models, options, k, normalize, verbose, nbest, return_alignment, suppress_unk):
 
-    from theano_util import (load_params, init_theano_params)
-    from nmt import (build_sampler, gen_sample, init_params)
+    from .theano_util import (load_params, init_theano_params)
+    from .nmt import (build_sampler, gen_sample, init_params)
 
     from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
     from theano import shared
@@ -77,9 +82,9 @@ def print_matrix(hyp, file):
   for target_word_alignment in hyp:
     # each source hidden state has a corresponding weight
     for w in target_word_alignment:
-      print >>file, w,
-    print >> file, ""
-  print >> file, ""
+      print(w, end=' ', file=file)
+    print("", file=file)
+  print("", file=file)
 
 import json, io
 def print_matrix_json(hyp, source, target, sid, tid, file):
@@ -95,7 +100,7 @@ def print_matrix_json(hyp, source, target, sid, tid, file):
 def print_matrices(mm, file):
   for hyp in mm:
     print_matrix(hyp, file)
-    print >>file, "\n"
+    print("\n", file=file)
 
 
 def main(models, source_file, saveto, save_alignment=None, k=5,
@@ -122,7 +127,7 @@ def main(models, source_file, saveto, save_alignment=None, k=5,
                 if idx >= options[0]['n_words_src']:
                     del word_dict[key]
         word_idict = dict()
-        for kk, vv in word_dict.iteritems():
+        for kk, vv in six.iteritems(word_dict):
             word_idict[vv] = kk
         word_idict[0] = '<eos>'
         word_idict[1] = 'UNK'
@@ -132,7 +137,7 @@ def main(models, source_file, saveto, save_alignment=None, k=5,
     # load target dictionary and invert
     word_dict_trg = load_dict(dictionary_target)
     word_idict_trg = dict()
-    for kk, vv in word_dict_trg.iteritems():
+    for kk, vv in six.iteritems(word_dict_trg):
         word_idict_trg[vv] = kk
     word_idict_trg[0] = '<eos>'
     word_idict_trg[1] = 'UNK'
@@ -141,7 +146,7 @@ def main(models, source_file, saveto, save_alignment=None, k=5,
     queue = Queue()
     rqueue = Queue()
     processes = [None] * n_process
-    for midx in xrange(n_process):
+    for midx in range(n_process):
         processes[midx] = Process(
             target=translate_model,
             args=(queue, rqueue, midx, models, options, k, normalize, verbose, nbest, save_alignment is not None, suppress_unk))
@@ -169,7 +174,7 @@ def main(models, source_file, saveto, save_alignment=None, k=5,
                 w = [word_dicts[i][f] if f in word_dicts[i] else 1 for (i,f) in enumerate(w.split('|'))]
                 if len(w) != options[0]['factors']:
                     sys.stderr.write('Error: expected {0} factors, but input word has {1}\n'.format(options[0]['factors'], len(w)))
-                    for midx in xrange(n_process):
+                    for midx in range(n_process):
                         processes[midx].terminate()
                     sys.exit(1)
                 x.append(w)
@@ -180,13 +185,13 @@ def main(models, source_file, saveto, save_alignment=None, k=5,
         return idx+1, source_sentences
 
     def _finish_processes():
-        for midx in xrange(n_process):
+        for midx in range(n_process):
             queue.put(None)
 
     def _retrieve_jobs(n_samples):
         trans = [None] * n_samples
         out_idx = 0
-        for idx in xrange(n_samples):
+        for idx in range(n_samples):
             resp = rqueue.get()
             trans[resp[0]] = resp[1]
             if verbose and numpy.mod(idx, 10) == 0:
