@@ -1,7 +1,7 @@
 NEMATUS
 -------
 
-NB! This is a fork of the original repository with goal to make it work with Python3.4+ .
+#### NB! This is a fork of the original repository with goal to make it work with Python3.4+ .
 
 Attention-based encoder-decoder model for neural machine translation
 
@@ -26,7 +26,7 @@ The changes to Nematus include:
 INSTALLATION
 ------------
 
-Nematus requires the following packages:
+*Nematus requires the following packages*:
 
  - Python >= 2.7
  - numpy
