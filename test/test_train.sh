@@ -6,10 +6,10 @@
 # For a setup that preprocesses and trains a larger data set,
 # check https://github.com/rsennrich/wmt16-scripts/tree/master/sample
 
-../nematus/nmt.py \
+python -m nematus.nmt  \
   --model models/model.npz \
-  --datasets data/corpus.en data/corpus.de \
-  --dictionaries data/vocab.en.json data/vocab.de.json \
+  --datasets test/data/corpus.en test/data/corpus.de \
+  --dictionaries test/data/vocab.en.json test/data/vocab.de.json \
   --dim_word 256 \
   --dim 512 \
   --n_words_src 30000 \
