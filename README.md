@@ -68,25 +68,25 @@ on an Intel Xeon CPU E5-2620 v3, with a Nvidia GeForce GTX 1080 GPU and CUDA 8.0
 
 CPU, theano 0.8.2:
 
-  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=cpu ./test_train.sh
+  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=cpu test/test_train.sh
 
 >> 2.37 sentences/s
 
 GPU, no CuDNN, theano 0.8.2:
 
-  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=gpu ./test_train.sh
+  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=gpu test/test_train.sh
 
 >> 71.62 sentences/s
 
 GPU, CuDNN 5.1, theano 0.8.2:
 
-  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=gpu ./test_train.sh
+  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=gpu test/test_train.sh
 
 >> 139.73 sentences/s
 
 GPU, CuDNN 5.1, theano dev:
 
-  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=gpu ./test_train.sh
+  THEANO_FLAGS=mode=FAST_RUN,floatX=float32,device=gpu test/test_train.sh
 
 >> 173.15 sentences/s
 
