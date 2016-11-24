@@ -1,6 +1,8 @@
 NEMATUS
 -------
 
+NB! This is a fork of the original repository with goal to make it work with Python3.4+ .
+
 Attention-based encoder-decoder model for neural machine translation
 
 This package is based on the dl4mt-tutorial by Kyunghyun Cho et al. ( https://github.com/nyu-dl/dl4mt-tutorial ).
