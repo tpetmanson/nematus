@@ -20,6 +20,7 @@ import os
 import warnings
 import sys
 import time
+import codecs
 
 from subprocess import Popen
 
@@ -880,7 +881,7 @@ def train(dim_word=100,  # word vector dimensionality
             uidx = rmodel['uidx']
 
     #save model options
-    json.dump(model_options, open('%s.json' % saveto, 'w', encoding='utf-8'), indent=2)
+    json.dump(model_options, codecs.open('%s.json' % saveto, 'w', encoding='utf-8'), indent=2)
 
     if validFreq == -1:
         validFreq = len(train[0])/batch_size
@@ -1052,7 +1053,7 @@ def train(dim_word=100,  # word vector dimensionality
                     print('Saving  model...', end=' ')
                     params = unzip_from_theano(tparams)
                     numpy.savez(saveto +'.dev', history_errs=history_errs, uidx=uidx, **params)
-                    json.dump(model_options, open('%s.dev.npz.json' % saveto, 'wb'), indent=2)
+                    json.dump(model_options, codecs.open('%s.dev.npz.json' % saveto, 'w', 'utf-8'), indent=2)
                     print('Done')
                     p_validation = Popen([external_validation_script])
 
