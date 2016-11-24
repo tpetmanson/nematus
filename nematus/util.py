@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import sys
 import json
 import six.moves.cPickle as pkl
+import codecs
 
 #json loads strings as unicode; we currently still work with Python 2 strings, and need conversion
 def unicode_to_utf8(d):
@@ -14,7 +15,7 @@ def unicode_to_utf8(d):
 
 def load_dict(filename):
     try:
-        with open(filename, 'r', encoding='utf-8') as f:
+        with codecs.open(filename, 'r', encoding='utf-8') as f:
             return unicode_to_utf8(json.load(f))
     except:
         with open(filename, 'rb') as f:
