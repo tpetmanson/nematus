@@ -11,9 +11,10 @@ import six.moves.cPickle as pkl
 def unicode_to_utf8(d):
     return dict((key.encode("UTF-8"), value) for (key,value) in d.items())
 
+
 def load_dict(filename):
     try:
-        with open(filename, 'rb') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             return unicode_to_utf8(json.load(f))
     except:
         with open(filename, 'rb') as f:
