@@ -7,6 +7,7 @@ import json
 
 import sys
 import fileinput
+import codecs
 
 from collections import OrderedDict
 
@@ -14,7 +15,7 @@ def main():
     for filename in sys.argv[1:]:
         print('Processing', filename)
         word_freqs = OrderedDict()
-        with open(filename, 'r') as f:
+        with codecs.open(filename, 'r', encoding='utf-8') as f:
             for line in f:
                 words_in = line.strip().split(' ')
                 for w in words_in:
@@ -33,7 +34,7 @@ def main():
         for ii, ww in enumerate(sorted_words):
             worddict[ww] = ii+2
 
-        with open('%s.json'%filename, 'wb') as f:
+        with codecs.open('%s.json'%filename, 'w', encoding='utf-8') as f:
             json.dump(worddict, f, indent=2, ensure_ascii=False)
 
         print('Done')
